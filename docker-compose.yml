@@ -1,15 +1,24 @@
 services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: keycloak-db
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=Keycloak!123
+    ports:
+      - "1433:1433"
+
   keycloak:
-    image: quay.io/keycloak/keycloak:26.5.2
-    container_name: keycloak-server
+    image: quay.io/keycloak/keycloak:latest
     command: start-dev
     environment:
+      - KC_DB=mssql
+      - KC_DB_URL=jdbc:sqlserver://sqlserver:1433;databaseName=Keycloak;encrypt=true;trustServerCertificate=true;
+      - KC_DB_USERNAME=sa
+      - KC_DB_PASSWORD=Keycloak!123
       - KEYCLOAK_ADMIN=admin
       - KEYCLOAK_ADMIN_PASSWORD=admin
-      - KC_HEALTH_ENABLED=true
+    depends_on:
+      - sqlserver
     ports:
       - "8080:8080"
-      - "9000:9000"
-    volumes:
-      - ./containers/identity:/opt/keycloak/data
-    user: root
