@@ -10,5 +10,5 @@ public interface ITaskService
 {
     Task<List<TaskItem>> GetTaskByUser(Guid UserId);
     Task CreateTask(string Title, Guid UserId);    
-    Task<bool> CompleteTask(Guid TaskId, Guid UserId);
+    Task<TaskItem?> CompleteTask(Guid TaskId, Guid UserId);
 }

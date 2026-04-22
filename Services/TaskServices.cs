@@ -29,14 +29,14 @@ public class TaskServices(AppDbContext context) : ITaskService
         await context.SaveChangesAsync();
     }
 
-    public async Task<bool> CompleteTask(Guid TaskId, Guid UserId)
+    public async Task<TaskItem?> CompleteTask(Guid TaskId, Guid UserId)
     {
         var task = await context.Tasks.FirstOrDefaultAsync(t => t.Id == TaskId && t.UserId == UserId);
 
-        if (task == null ) return false;
+        if (task == null) return null;
 
-        task.IsCompleted = true;
+        task.IsCompleted = !task.IsCompleted; // Toggle
         await context.SaveChangesAsync();
-        return true;
+        return task;
     } 
 }

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using KeycloakAuth.Filters;
 using KeycloakAuth.Services; 
 using System.Security.Claims;
+using KeycloakAuth.DTOs;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -15,7 +16,20 @@ public class TasksController(ITaskService taskService) : ControllerBase
     {
         var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
         var tasks = await taskService.GetTaskByUser(userId);
-        return Ok(tasks);
+        var taskDtos = tasks.Select(t => new TaskDto
+        {
+            Id = t.Id,
+            Title = t.Title,
+            IsCompleted = t.IsCompleted,
+            CreatedAt = t.CreatedAt
+        }).ToList();
+
+        if (!taskDtos.Any())
+        {
+            return Ok(new { message = "Nenhuma tarefa encontrada.", tasks = taskDtos });
+        }
+
+        return Ok(taskDtos);
     }
 
     [HttpPost]
@@ -31,13 +45,21 @@ public class TasksController(ITaskService taskService) : ControllerBase
         var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (!Guid.TryParse(userIdClaim, out var userId)) return Unauthorized();
 
-        var success = await taskService.CompleteTask(id, userId);
+        var task = await taskService.CompleteTask(id, userId);
 
-        if (!success) 
+        if (task == null)
         {
             return NotFound("Tarefa não encontrada ou você não tem permissão para editá-la.");
         }
 
-        return NoContent();
+        var taskDto = new TaskDto
+        {
+            Id = task.Id,
+            Title = task.Title,
+            IsCompleted = task.IsCompleted,
+            CreatedAt = task.CreatedAt
+        };
+
+        return Ok(taskDto);
     }
 }

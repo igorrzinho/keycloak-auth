@@ -8,6 +8,7 @@ using KeycloakAuth.Entities;
 using Microsoft.EntityFrameworkCore;
 using KeycloakAuth.Filters;
 using KeycloakAuth.Services;
+using System.Text.Json.Serialization;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
@@ -15,11 +16,22 @@ builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.AddSwaggerGenWithAuthSupport(builder.Configuration);
 
-builder.Services.AddDbContext<AppDbContext>(o => o.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-builder.Services.AddControllers();
+// No Program.cs
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.ReferenceHandler = ReferenceHandler.IgnoreCycles;
+    });
 builder.Services.AddScoped<SyncKeycloakUserFilter>();
 builder.Services.AddScoped<ITaskService, TaskServices>();
+builder.Services.AddHttpClient<IKeycloakAdminService, KeycloakAdminService>(client =>
+{
+    client.BaseAddress = new Uri(builder.Configuration["Keycloak:BaseUrl"] ?? "http://localhost:8080");
+});
+builder.Services.AddScoped<IKeycloakAdminService, KeycloakAdminService>();
 
 builder.Services.AddAuthorization();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
